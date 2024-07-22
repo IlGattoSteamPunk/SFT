@@ -185,7 +185,7 @@
             });
 
             copyToClipboardBtn.addEventListener('click', function () {
-                const seriesListText = seriesData.map(series => `${series.name} - ${series.position} @ ${series.minute}`).join('\n');
+                const seriesListText = seriesData.map(series => `${series.name} - ${series.position} @ ${series.minute}`).join('\n') min;
                 navigator.clipboard.writeText(seriesListText).then(() => {
                     alert('Series list copied to clipboard!');
                 }).catch(err => {
