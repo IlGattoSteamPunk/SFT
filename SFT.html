@@ -105,18 +105,25 @@
         <input type="text" id="currentMinute" placeholder="Minute Mark (e.g., 12:29)" required>
         <button type="submit">Add Series/Film</button>
     </form>
+    <input type="text" id="searchBox" placeholder="Search series/films" style="margin: 20px auto; display: block; max-width: 600px; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc;">
     <div class="series-list" id="seriesList"></div>
+    <button id="copyListButton" style="margin: 20px auto; display: block; max-width: 600px; padding: 10px; background-color: #00cc66; color: white; border: none; border-radius: 5px; cursor: pointer;">Copy List to Clipboard</button>
+    <button id="importListButton" style="margin: 20px auto; display: block; max-width: 600px; padding: 10px; background-color: #ff9933; color: white; border: none; border-radius: 5px; cursor: pointer;">Import List from Clipboard</button>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const seriesForm = document.getElementById('seriesForm');
             const seriesList = document.getElementById('seriesList');
+            const searchBox = document.getElementById('searchBox');
+            const copyListButton = document.getElementById('copyListButton');
+            const importListButton = document.getElementById('importListButton');
             let seriesData = JSON.parse(localStorage.getItem('seriesData')) || [];
 
-            function renderSeries() {
+            function renderSeries(searchTerm = '') {
                 seriesList.innerHTML = '';
-                seriesData.sort((a, b) => a.name.localeCompare(b.name));
-                seriesData.forEach((series, index) => {
+                let filteredData = seriesData.filter(series => series.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                filteredData.sort((a, b) => a.name.localeCompare(b.name));
+                filteredData.forEach((series, index) => {
                     const seriesItem = document.createElement('div');
                     seriesItem.classList.add('series-item');
                     seriesItem.innerHTML = `
@@ -166,6 +173,35 @@
                 localStorage.setItem('seriesData', JSON.stringify(seriesData));
                 renderSeries();
                 seriesForm.reset();
+            });
+
+            searchBox.addEventListener('input', function () {
+                renderSeries(searchBox.value);
+            });
+
+            copyListButton.addEventListener('click', function () {
+                const seriesListText = seriesData.map(series => `${series.name} - ${series.position} @ ${series.minute} min`).join('\n');
+                navigator.clipboard.writeText(seriesListText).then(() => {
+                    alert('Series list copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            });
+
+            importListButton.addEventListener('click', function () {
+                navigator.clipboard.readText().then(text => {
+                    const importedSeries = text.split('\n').map(line => {
+                        const [namePart, positionPart] = line.split(' - ');
+                        const [position, minutePart] = positionPart.split(' @ ');
+                        const minute = minutePart.split(' ')[0];
+                        return { name: namePart, position: position, minute: minute };
+                    });
+                    seriesData = seriesData.concat(importedSeries);
+                    localStorage.setItem('seriesData', JSON.stringify(seriesData));
+                    renderSeries();
+                }).catch(err => {
+                    console.error('Failed to read text from clipboard: ', err);
+                });
             });
 
             renderSeries();
